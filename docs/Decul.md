@@ -1,18 +1,18 @@
 # Decul
 
 **More Than a Hack 2027 — Football Possession Prediction**  
-**Technical methodology | Final V6 candidate**  
+**Technical methodology | Final model**  
 **Team:** Decul  
-**Version:** V6, frozen 8 November 2026  
+**Model frozen:** 8 November 2026  
 **Prediction output:** `Decul.csv` (`frame,label`)
 
 ## Executive summary
 
 We infer the ball-possession state of each video frame using **tracking-only features** and a two-stage **XGBoost + Hidden Markov Model (HMM)** pipeline. XGBoost estimates the probabilities of **home possession (H), away possession (A), and dead ball (D)** from observed players, ball position and temporal context. An HMM then decodes the most plausible sequence of states. Frames outside the official evaluation periods receive **X**.
 
-The model was trained with seven external **IDSSE** football matches. No target-match possession labels, Smart Tagging teacher channels, video recognition, or SkillCorner training data were used in the frozen V6 model. The final model uses 84 tracking-derived base measurements, expanded to **172 context-aware inputs**, with predictions estimated at 5 Hz and returned to the original 25 Hz timeline. The selected learner is `context_deep` with the `prior_4` HMM decoder.
+The model was trained with seven external **IDSSE** football matches. No target-match possession labels, Smart Tagging teacher channels, video recognition, or SkillCorner training data were used in the frozen submission model. The final model uses 84 tracking-derived base measurements, expanded to **172 context-aware inputs**, with predictions estimated at 5 Hz and returned to the original 25 Hz timeline. The selected learner is `context_deep` with the `prior_4` HMM decoder.
 
-In a nested, match-grouped **development** evaluation, the complete V6 procedure obtained **0.6301 clean SpellF1**, **0.4703 mean dropout SpellF1**, and a **0.5502 balanced objective**, versus **0.5110** for an independently refitted causal reference. The resulting 199,319-row prediction file was reproduced byte-for-byte from raw target tracking; its SHA256 is `020ebd0cdac4f6bd8228cf1f27193c123b7c73fe872d5655a182300c4556c250`. These figures do **not** establish the unknown BAR–ATH ground-truth score.
+In a nested, match-grouped **development** evaluation, the final model-selection procedure obtained **0.6301 clean SpellF1**, **0.4703 mean dropout SpellF1**, and a **0.5502 balanced objective**, versus **0.5110** for an independently refitted causal reference. The resulting 199,319-row prediction file was reproduced byte-for-byte from raw target tracking; its SHA256 is `020ebd0cdac4f6bd8228cf1f27193c123b7c73fe872d5655a182300c4556c250`. These figures do **not** establish the unknown BAR–ATH ground-truth score.
 
 ## 1. Task definition
 
@@ -47,7 +47,7 @@ The public repository contains code, frozen model, and aggregate scores, but int
 
 The tracked player and ball coordinates are converted consistently into **metres**. IDSSE coordinates use a centered reference; BAR–ATH normalized coordinates are converted using the configured pitch dimensions. Missing coordinate pairs remain `NaN`, rather than being filled with a fictitious (0, 0) location. Feature construction uses player team-slot metadata, and the underlying feature builder guards against implausible velocities (including roughly >12 m/s player and >45 m/s ball motion in the original shared feature pipeline).
 
-The V6 feature extractor computes independent features for each match period. This prevents temporal history, symmetric future context and the HMM from crossing halftime. Input parity checks confirm that the independently reconstructed clean 84-feature values equal the cached IDSSE features; three observation-only measurements previously located in a legacy feature-building stage were rebuilt without reading tagging data.
+The feature extractor computes independent features for each match period. This prevents temporal history, symmetric future context and the HMM from crossing halftime. Input parity checks confirm that the independently reconstructed clean 84-feature values equal the cached IDSSE features; three observation-only measurements previously located in a legacy feature-building stage were rebuilt without reading tagging data.
 
 Missingness is retained as an informative signal. For robustness, features are recomputed from tracked observations **after** synthetic ball and player dropout. Training labels themselves are never modified by dropout.
 
@@ -61,7 +61,7 @@ This is **offline sequence context**: selected features use observations from bo
 
 ### Feature selection and dimensionality reduction
 
-V6 did not simply inherit V1's top-60 subset. It deliberately exposes all 84 compatible base measurements to the candidate learners, and the 172-input contextual formulation is selected in nested validation. Four predeclared XGBoost learner configurations were tested: `causal84`, `context_regularized`, `context_deep`, and `context_regimes`.
+The model uses all 84 compatible base measurements instead of restricting the input to a previously selected smaller subset. The 172-input contextual formulation is selected in nested validation. Four predeclared XGBoost learner configurations were tested: `causal84`, `context_regularized`, `context_deep`, and `context_regimes`.
 
 **PCA was tested but not selected.** The `context_regimes` candidate adds eight train-fold-fitted PCA components and eight MiniBatchKMeans tracking-regime distances (188-dimensional representation). No PCA or clustering transform is part of the frozen final `context_deep` model. The supervised learner's tree feature importance and optional SHAP explanations are interpretation tools, **not** an extra post-hoc feature-selection step.
 
@@ -98,7 +98,7 @@ The selected model outputs a three-class probability distribution at the model's
 
 ## 8. Hidden Markov Model and decoding
 
-The HMM learns a three-state first-order temporal model from **clean training-fold labels at 5 Hz**. State prior, initial-state and transition probabilities are calculated from the training labels with pseudocount smoothing, separately for each fold; none is loaded from the frozen V1 HMM. The final HMM is estimated again using all seven eligible IDSSE matches.
+The HMM learns a three-state first-order temporal model from **clean training-fold labels at 5 Hz**. State prior, initial-state and transition probabilities are calculated from the training labels with pseudocount smoothing, separately for each fold; none is inherited from an earlier fitted HMM. The final HMM is estimated again using all seven eligible IDSSE matches.
 
 Let `p_t(s)` be the XGBoost probability for state `s` at model timestep `t`, `π(s)` the estimated training prior, `T(i,j)` the transition matrix and `q(s)` the initial-state distribution. The selected `prior_4` option uses emission evidence:
 
@@ -112,7 +112,7 @@ We compute official-style **SpellF1** at 25 Hz after expanding 5 Hz predictions 
 
 ### Main matched nested development comparison
 
-| Metric | Causal reference | Nested V6 | Difference |
+| Metric | Causal reference | Decul | Difference |
 |---|---:|---:|---:|
 | Clean SpellF1 | 0.5961 | **0.6301** | **+0.0340** |
 | Mean dropout SpellF1 | 0.4260 | **0.4703** | **+0.0443** |
@@ -121,9 +121,9 @@ We compute official-style **SpellF1** at 25 Hz after expanding 5 Hz predictions 
 | Transition precision (±1 s) | **0.6350** | 0.6260 | −0.0090 |
 | Transition recall (±1 s) | 0.4265 | **0.4903** | **+0.0638** |
 
-The *balanced objective* averages clean SpellF1 and the mean of the three dropout scenario scores with equal 50% weighting. Nested V6 improves the objective on all seven outer-evaluated IDSSE matches relative to the independently refitted causal baseline. The comparison reflects the full selected pipeline and does not attribute the entire gain solely to context features.
+The *balanced objective* averages clean SpellF1 and the mean of the three dropout scenario scores with equal 50% weighting. Decul improves the objective on all seven outer-evaluated IDSSE matches relative to the independently refitted causal baseline. The comparison reflects the full selected pipeline and does not attribute the entire gain solely to context features.
 
-### V6 by tracking scenario
+### Performance by tracking scenario
 
 | Scenario | SpellF1 |
 |---|---:|
@@ -152,18 +152,16 @@ XGBoost probabilities are predicted at a period-aligned **5 Hz** grid. The HMM d
 | X | 40,462 |
 | **Total** | **199,319** |
 
-The frozen `Decul_V6.csv` and submission copy `Decul.csv` are byte-identical. The established final readiness run reported the **official validator PASS** and matching SHA256. A separate-process raw-target reproduction also matched that exact fingerprint. **No BAR–ATH ground-truth performance is known.**
+The final `Decul.csv` and the original frozen-inference output are byte-identical. The established final readiness run reported the **official validator PASS** and matching SHA256. A separate-process raw-target reproduction also matched that exact fingerprint. **No BAR–ATH ground-truth performance is known.**
 
 ## 11. Reproducibility, artifacts and integrity
 
-The frozen model originates from the run dated `20261108_053619_utc`. The public **Decul** repository includes `models/model.joblib`, `models/experiment.json`, the matched development tables under `results/`, and `src/run_v6.py` and `src/models_v6.py`. The trained model and `src/run_v6.py` remain byte-for-byte unchanged; the only change in `src/models_v6.py` is a metadata-file path relocation (`notebook_2/publication_candidate/configs/feature_metadata_public.json` to `configs/feature_metadata_public.json`). The feature metadata JSON contents are unchanged. The historic paths and source hashes in `models/experiment.json` record the original training provenance, not current publication paths. The feature metadata contract is now located at `configs/feature_metadata_public.json`. The complete inference and decoding implementation is in the version-pinned source modules; the training protocol and model-selection evidence are recorded in `models/experiment.json` and `results/`. Reproduction does not depend on an interactive analysis environment.
+The frozen model originates from the documented training run on 8 November 2026. The repository includes `models/model.joblib`, `models/experiment.json`, the aggregate development tables under `results/`, and the training/inference implementation under `src/`. Only the feature-metadata file path was relocated for the public repository; its JSON contents and the frozen model weights are unchanged. The integrity checker records source hashes, while `models/experiment.json` retains the original provenance. Reproduction does not depend on an interactive analysis environment.
 
 | Artifact | SHA256 |
 |---|---|
 | `Decul.csv` (separate form submission) | `020ebd0cdac4f6bd8228cf1f27193c123b7c73fe872d5655a182300c4556c250` |
 | `models/model.joblib` | `69db493a71c99b53cfec4032f5b27429be67d1d9ba349af725ec28796bfb5282` |
-| `src/run_v6.py` | `a5ae204fd1a7db1ba629068a598eb4aee96fa37cded7d4b2e9f39c56420569ff` |
-| `src/models_v6.py` | `45bc4ca15b3a9e1b35fbda1f3492675d2b551d9f55718e6fdff952bbdd0dfe42` |
 
 **Review the methodology and development evidence without retraining:**
 
@@ -183,7 +181,7 @@ shasum -a 256 output/Decul.csv
 
 The reproduction script generates `output/Decul.csv`, verifies its SHA256 against the frozen manifest, and refuses to overwrite an existing output. The original project owner ran this reproduction successfully and independently passed the official CSV-format validator. The public repository **does not include** the submission CSV, which is provided separately for the Google Form.
 
-Full training requires seven legitimately obtained IDSSE match artifacts, their separately prepared adapter/label files under `data/derived/idsse/`, and original V1 reference artifacts for historical comparisons. Those licensed datasets and earlier model artifacts are **not included** in the public repository. `src/run_v6.py` records the training procedure and expected input contracts; recreating the full training data-preparation chain requires additional source/data access. Fresh training may not produce byte-identical model weights across platforms. **The verified bitwise claim is final inference with the supplied frozen model**, not end-to-end retraining from downloaded raw IDSSE files.
+Full training requires seven legitimately obtained IDSSE match artifacts and their separately prepared adapter/label files under `data/derived/idsse/`. Historical reference comparisons additionally require separately retained research artifacts. Those licensed datasets and research artifacts are **not included** in the public repository. The training source under `src/` records the protocol and expected input contracts; recreating the full training data-preparation chain requires additional source/data access. Fresh training may not produce byte-identical model weights across platforms. **The verified bitwise claim is final inference with the supplied frozen model**, not end-to-end retraining from downloaded raw IDSSE files.
 
 The copied organiser code (`games.py`, `starter/`, and `evaluation/`) retains its MIT licence notice in `third_party/METRICA_LICENSE.txt`. That licence does not grant permission to redistribute licensed match data.
 
@@ -191,8 +189,8 @@ The copied organiser code (`games.py`, `starter/`, and `evaluation/`) retains it
 
 This is a tracking-only offline predictor and is not a live model. Results are bounded by annotation-policy differences between IDSSE and BAR–ATH, possible team/league/provider shift and synthetic rather than naturally occurring missingness. The seven development matches were previously explored; no claim of untouched external validation is made. The model can miss very short spells, and an HMM designed to reduce spurious transitions can also miss genuine possession changes.
 
-Licensed raw football tracking, event labels, tactical XML and caches must **not** be committed to a public repository. The separately submitted `Decul.csv` is intended for the official submission channel; check competition restrictions before public distribution of reconstructive target predictions. Source attribution and third-party licenses must be retained. The separately investigated SkillCorner dataset and V7 experiments are **not part of the V6 training pipeline**.
+Licensed raw football tracking, event labels, tactical XML and caches must **not** be committed to a public repository. The separately submitted `Decul.csv` is intended for the official submission channel; check competition restrictions before public distribution of reconstructive target predictions. Source attribution and third-party licenses must be retained. The submitted model uses only the IDSSE training labels and tactical tracking at inference; unrelated research candidates are not part of this pipeline.
 
 ---
 
-**Conclusion.** Decul V6 is a reproducible, frozen XGBoost + HMM candidate with measurable gains in nested IDSSE development experiments and a verified submission-file contract. Its actual possession accuracy on BAR–ATH remains unknown until official evaluation.
+**Conclusion.** Decul is a reproducible, frozen XGBoost + HMM model with measurable gains in nested IDSSE development experiments and a verified submission-file contract. Its actual possession accuracy on BAR–ATH remains unknown until official evaluation.

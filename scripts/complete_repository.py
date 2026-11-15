@@ -70,7 +70,7 @@ def main():
  sys.path.insert(0,str(THIS/'scripts'))
  from check_package import check
  if check(): raise SystemExit('Static dependency/hash check failed; do not publish.')
- out=project/'Decul_GitHub_Ready_v2.zip'
+ out=project/'Decul_Source_Package.zip'
  if out.exists():raise SystemExit('Output ZIP already exists, preserving it: '+str(out))
  public_dirs={'src','models','results','docs','scripts','tests','starter','local_modules','evaluation','configs','third_party'}
  top_files={'README.md','requirements.txt','requirements-optional.txt','.gitignore','.gitattributes','games.py'}

@@ -1,105 +1,93 @@
 # Decul — Football Possession Prediction
 
-**More Than a Hack 2027 · Team Decul · Final submitted-method candidate**
+**More Than a Hack 2027 · Team Decul · Final submission pipeline**
 
-We predict home possession (**H**), away possession (**A**), and dead ball (**D**) using 84 tracking-compatible measurements, offline temporal context (172 XGBoost inputs), and an HMM sequence decoder. Frames outside the configured period receive **X**.
+Decul predicts possession as **H** (home), **A** (away), or **D** (dead ball) from tactical player-and-ball tracking. An XGBoost classifier uses 84 tracking-derived measurements plus 88 temporal-context measurements (172 inputs total). An HMM/Viterbi decoder produces coherent possession sequences. Frames outside official match periods are marked **X**.
 
-The saved model is the frozen, validated version used to produce `Decul.csv`. Historical implementation filenames `models_v6.py` / `run_v6.py` and the internal `version='V6'` are **intentionally retained** for serialized-model compatibility and scientific provenance; they are not separate submission versions.
-
-## Repository contents
+## Repository structure
 
 | Path | Purpose |
 |---|---|
-| `src/models_v6.py`, `src/run_v6.py` | Original model, feature, training and HMM source (one metadata-path relocation in `models_v6.py`) |
-| `models/model.joblib` | Frozen XGBoost + HMM payload |
-| `models/experiment.json` | Exact model architecture, splits, feature/data lineage, hashes |
-| `results/` | Aggregate nested development evaluation (no per-frame licensed tracking) |
-| `docs/Decul.md`, `docs/Decul.pdf` | Technical documentation |
-| `scripts/reproduce_submission.py` | Inference from permitted BAR–ATH tactical inputs; exact checksum check |
-| `scripts/check_package.py` | Integrity, required-module and data-access readiness check |
-| `scripts/complete_repository.py` | One-time local collector for missing original shared source modules |
+| `src/` | Feature construction, model implementation, training protocol, and HMM decoding |
+| `local_modules/possession_features.py` | Tracking-based feature builder |
+| `configs/` | Feature configuration and ordered metadata contract |
+| `models/model.joblib` | Frozen XGBoost classifier and HMM parameters |
+| `models/experiment.json` | Training protocol, development selections, hashes, and provenance |
+| `results/` | Aggregate development scores and interpretation |
+| `docs/Decul.md`, `docs/Decul.pdf` | Technical methodology and limitations |
+| `scripts/reproduce_submission.py` | Exact inference from authorised tactical inputs |
+| `scripts/check_package.py` | Integrity and dependency checks |
+| `tests/` | Package tests |
 
-## Exact source dependencies and repository completion
+All files needed to inspect or run the **frozen inference pipeline** are included. The supplied model contains a serialized reference to its original Python class location; its internal source filenames are retained for compatibility, **not** because multiple submission models are required.
 
-This package **already includes** the four user-provided custom tracking-feature and feature-contract files:
+## Training data and permitted inputs
 
-- `local_modules/possession_features.py` (SHA256 matched to frozen source manifest)
+The model was fitted and selected on **seven external IDSSE matches**, using provider-supplied `BallStatus` and `BallPossession` fields as training labels. Training and tuning did **not** use possession labels, video, or manually annotated data from the organiser's BAR–ATH game.
+
+The organiser's BAR–ATH **tactical ATD tracking and metadata** are used **only for final inference**, including player/ball observations, team mapping, and match-period alignment. No video recognition or Smart Tagging teacher model is used in the final inference pipeline.
+
+The repository includes the source module and four small feature/contract files required for inference:
+
+- `local_modules/possession_features.py`
 - `configs/bar_ath_feature_options.json`
 - `configs/feature_metadata_public.json`
-- `data/derived/idsse/J03WPY/idsse_feature_contract.json` (84 column names and non-sensitive schema metadata; no tracking observations)
+- `data/derived/idsse/J03WPY/idsse_feature_contract.json` — schema only; no tracking observations
 
-The V6 training/inference implementation also relies on the **organiser's official source files** `games.py`, `starter/`, `evaluation/possession_metrics.py` and `evaluation/validate_submission.py`. The original organiser MIT notice is copied to `third_party/METRICA_LICENSE.txt`. It covers the copied organiser code, **not** the restricted match data. These were not in the uploaded V6/auxiliary archives. Use the exact files from the official project checkout that was used for the frozen V6 reproduction:
+Organiser-provided source modules (`games.py`, `starter/`, and `evaluation/`) are also included with the relevant licence notice at `third_party/METRICA_LICENSE.txt`. This notice **does not** licence redistribution of competition match data.
+
+## Installation
+
+Use Python 3.11 and a compatible environment, then install the directly required packages:
 
 ```bash
-cd ~/Documents/more-than-a-hack-2027
-conda activate mtah2027
-python Decul/scripts/complete_repository.py --project-root .
-python Decul/scripts/check_package.py
+python -m pip install -r requirements.txt
 ```
 
-`complete_repository.py` copies only necessary public-source Python modules, verifies that the four packaged custom files match the ones from the original project (when present), and writes `Decul_GitHub_Ready_v2.zip` in the parent project folder. It does **not** copy raw video/tracking/labels, model caches, or project-wide data. The script refuses to overwrite an existing ZIP.
+For users of the original competition environment, activate it instead (for example, `conda activate mtah2027`). Transitive and platform-specific dependencies have not been fully locked across operating systems; this is not a guaranteed cross-platform lockfile.
 
-**A completed ZIP only means the source has been assembled. It is not yet independently verified to reproduce predictions from a clean clone.** Before publication, perform the actual raw-ATD reproduction (using the official data access configuration) and check that `output/Decul.csv` has the frozen SHA256. Also review the copied organiser modules for attribution and redistributability, and exclude any local secrets.
+## Reproduce the final possession CSV
 
-## Environment
-
-Use Python 3.11 and your pre-existing environment, or install the direct Python dependencies:
+With the organiser's legitimate tactical ATD bundle available locally, set `MTAH_DATA_DIR` to the parent directory containing `tactical/BAR-ATH_tactical_atd.xml` and `tactical/BAR-ATH_tactical_atd.txt`:
 
 ```bash
-conda activate mtah2027
-# or, in a fresh environment: python -m pip install -r requirements.txt
-```
-
-The direct dependency versions were recorded in existing package environment notes, but the transitive package tree and platform-specific ATD dependencies have **not been independently locked**. This is not a verified cross-platform lockfile.
-
-## Reproduce the frozen submission
-
-Once the exact shared source modules are collected and you have legitimate access to the organiser's tactical ATD inputs under the project's `games.py` data-access contract:
-
-```bash
-cd ~/Documents/more-than-a-hack-2027/Decul
-conda activate mtah2027
-# Set this to the directory with tactical/BAR-ATH_tactical_atd.{xml,txt}
-export MTAH_DATA_DIR="$HOME/Documents/more-than-a-hack-2027/data"
+cd /path/to/Decul
+export MTAH_DATA_DIR=/path/to/official/data
 python scripts/check_package.py
 python scripts/reproduce_submission.py
 python evaluation/validate_submission.py output/Decul.csv
 shasum -a 256 output/Decul.csv
 ```
 
-The script creates `output/Decul.csv` only after predicting from original raw tracking and verifying exact SHA256 `020ebd0cdac4f6bd8228cf1f27193c123b7c73fe872d5655a182300c4556c250`. It never re-trains the model or overwrites a frozen output. The final `Decul.csv` for the Google Form is also distributed separately from this public-source bundle.
+`reproduce_submission.py` runs the frozen model; it **does not retrain**. It refuses to overwrite an existing `output/Decul.csv`, and checks that the generated file matches the recorded digest:
 
-Training the model from scratch additionally requires preparing seven IDSSE fixtures and their feature/label contracts under `data/derived/idsse/`, plus the original V1 reference artifacts under `data/derived/idsse/trained_model_v2/` for the historical comparison run. These are **training-only research dependencies**; frozen V6 inference does not require them. See `src/run_v6.py` for the exact protocol. Training refits are not guaranteed to yield byte-identical serialized model weights across environments; the supported **exact reproduction claim concerns inference with the frozen weights**.
+```text
+020ebd0cdac4f6bd8228cf1f27193c123b7c73fe872d5655a182300c4556c250
+```
 
-## Review the methodology and development results
+The validated output has **199,319** rows and the header `frame,label`. The submission CSV is provided separately through the competition form; it is not committed to this public code repository. Exact raw-ATD inference has previously produced the matching digest in the original environment. A fresh-clone, cross-platform end-to-end run has not been independently established.
 
-To understand how the model was trained, tuned and evaluated, read these tracked artifacts directly (no interactive environment required):
+## Model development and performance
 
-- `docs/Decul.md` and `docs/Decul.pdf`: methodological explanation, dataset provenance, limitations, metrics and output contract.
-- `models/experiment.json`: saved model-selection protocol, candidate choices, features, checksums and provenance.
-- `results/summary.csv`, `results/validation.csv`, `results/development_report.md`: aggregate development evidence and interpretation.
-- `src/run_v6.py`, `src/models_v6.py`, `local_modules/possession_features.py`: implementation of feature construction, candidate fitting, HMM decoding and inference.
+The selected model is XGBoost `context_deep` with the HMM decoder `prior_4`. The candidate configuration and decoder were chosen with **match-grouped nested cross-validation**, followed by a fit using all seven IDSSE matches.
 
-Inference is fully script-based. **PCA and SHAP are not part of the final prediction pipeline.** The confirmed exact reproduction claim applies to frozen-model inference, not to rerunning seven-match training without the licensed IDSSE input artifacts.
+| IDSSE development metric | Decul | Independently fitted causal reference |
+|---|---:|---:|
+| Clean SpellF1 | **0.6301** | 0.5961 |
+| Mean dropout SpellF1 | **0.4703** | 0.4260 |
+| Balanced objective | **0.5502** | 0.5110 |
+| Short possession spell recall (<2 s) | **0.1538** | 0.0962 |
 
-## Development performance (not competition scores)
+These are **external IDSSE development scores, not BAR–ATH competition scores**. The main model improves the balanced objective on all seven development matches; however, it remains sensitive to missing tracking observations and misses many possession intervals shorter than two seconds. Actual BAR–ATH possession performance is unknown because its ground truth is unavailable to participants.
 
-- Clean SpellF1: **0.6301**
-- Average dropout SpellF1: **0.4703**
-- Balanced objective: **0.5502**
-- Frozen-model CSV SHA256: `020ebd0cdac4f6bd8228cf1f27193c123b7c73fe872d5655a182300c4556c250`
-- Frozen-model SHA256: `69db493a71c99b53cfec4032f5b27429be67d1d9ba349af725ec28796bfb5282`
+For model design, training protocol, and full metrics, see `docs/Decul.pdf`, `docs/Decul.md`, `models/experiment.json`, and `results/development_report.md`. The experiment manifest and machine-readable result tables preserve original internal identifiers for auditability; they are not separate models to be submitted.
 
-These scores are match-grouped **IDSSE development** measurements, not a true independent BAR–ATH score. They do not prove generalization across tracking vendors. The shared SkillCorner audit and experimental V7 research are not part of this frozen submission model.
+## Reproducibility scope and data rights
 
-## License, attribution and safety
+- **Supported exact reproduction:** inference from authorised BAR–ATH tactical ATD data using the supplied frozen model, with output verified by SHA256.
+- **Not claimed:** independently repeating seven-match training from scratch using only this public repository. That requires separate licensed IDSSE inputs and their preprocessing adapters, and refitted weights are not guaranteed to be byte-identical across environments.
+- **Never upload:** raw licensed match video, tracking, Smart Tagging data, private caches, credentials, or reconstructive datasets to this public repository or unauthorised external AI services.
 
-IDSSE: Bassek, Rein, Weber & Memmert (2025), *An integrated dataset of spatiotemporal and event data in elite soccer*, *Scientific Data* 12, 195 (https://doi.org/10.1038/s41597-025-04505-y). Comply with IDSSE and competition data rights. Never commit licensed raw tracking, event files, private caches, credentials, or forbidden derived tracking dumps. The model weights themselves are provided for inspectable competition inference.
+External training data reference: Bassek, Rein, Weber & Memmert (2025), *An integrated dataset of spatiotemporal and event data in elite soccer*, *Scientific Data* 12, 195. https://doi.org/10.1038/s41597-025-04505-y
 
-## Public GitHub staging safeguards
-
-The `.gitignore` blocks all local tracking under `data/` while allowing exactly one schema-only metadata file `data/derived/idsse/J03WPY/idsse_feature_contract.json`, which the frozen source loads by its canonical path. Confirm this one file appears in your Git staging area. **Never** force-add the remainder of `data/`.
-
-For copied organiser source, retain `third_party/METRICA_LICENSE.txt` with the original MIT notice and scope disclaimer. Decul authors should separately choose any licence for their own code; the organiser MIT licence alone does not license Decul's model or external datasets.
-
-Parts of `docs/Decul.md` describe historical workspace paths from the original model audit. For running this standalone public repository, follow the current commands in this README.
+The organiser's MIT notice applies only to the included organiser code. It does not automatically licence Decul's original code, model, or third-party datasets.
