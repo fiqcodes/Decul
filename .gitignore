@@ -1,0 +1,37 @@
+# Raw, private, licensed and reconstructive tracking sources
+# All private data are ignored; ONLY the non-sensitive V6 column contract is tracked.
+/data/*
+!/data/derived/
+/data/derived/*
+!/data/derived/idsse/
+/data/derived/idsse/*
+!/data/derived/idsse/J03WPY/
+/data/derived/idsse/J03WPY/*
+!/data/derived/idsse/J03WPY/idsse_feature_contract.json
+/.private_cache/
+/.cache/
+/output/
+/demo_runs/
+*.atd
+*.epts
+*.jsonl
+*.mp4
+*.mov
+*.npz
+*.parquet
+*.ubj
+# Keep frozen fitted model in models/, but never ship other joblib caches
+*.joblib
+!models/model.joblib
+# Never upload submission predictions in this source repository
+Decul.csv
+Decul_V6*.csv
+*.pyc
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
+.env
+.env.*
+
+# Personal interactive analyses are not part of the public source release
+*.ipynb

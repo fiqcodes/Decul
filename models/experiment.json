@@ -1,0 +1,280 @@
+{
+  "version": "V6_sequence_context",
+  "created_utc": "2026-11-08T05:36:19.559258+00:00",
+  "data": "Existing local IDSSE seven matches only; no new external data acquired",
+  "matches": [
+    "J03WMX",
+    "J03WN1",
+    "J03WOH",
+    "J03WOY",
+    "J03WPY",
+    "J03WQQ",
+    "J03WR9"
+  ],
+  "outer_folds": [
+    [
+      "J03WMX",
+      "J03WOY"
+    ],
+    [
+      "J03WN1",
+      "J03WQQ"
+    ],
+    [
+      "J03WOH",
+      "J03WPY",
+      "J03WR9"
+    ]
+  ],
+  "selection": "Three outer match-group folds. Within each outer-training set, two disjoint inner match-group folds select learner and decoder. Outer labels never select that outer model or preprocessing. A fixed causal84 reference is independently refitted on the same outer training matches.",
+  "final_selection": "Mean inner validation objective across the six inner folds chooses the final all-seven-match fit; this is a final development choice, not an independently evaluated fixed-model score.",
+  "historical_caveat": "All seven matches have been inspected in earlier versions. Nested grouping prevents within-run fit leakage but cannot erase research-history selection bias. Results are development evidence, not a pristine holdout.",
+  "configs": {
+    "causal84": {
+      "context": false,
+      "regimes": false,
+      "n_estimators": 400,
+      "max_depth": 5,
+      "learning_rate": 0.05,
+      "min_child_weight": 8,
+      "reg_lambda": 5.0
+    },
+    "context_regularized": {
+      "context": true,
+      "regimes": false,
+      "n_estimators": 300,
+      "max_depth": 4,
+      "learning_rate": 0.05,
+      "min_child_weight": 10,
+      "reg_lambda": 8.0
+    },
+    "context_deep": {
+      "context": true,
+      "regimes": false,
+      "n_estimators": 500,
+      "max_depth": 6,
+      "learning_rate": 0.04,
+      "min_child_weight": 5,
+      "reg_lambda": 5.0
+    },
+    "context_regimes": {
+      "context": true,
+      "regimes": true,
+      "n_estimators": 400,
+      "max_depth": 5,
+      "learning_rate": 0.04,
+      "min_child_weight": 8,
+      "reg_lambda": 5.0
+    }
+  },
+  "decoder_options": [
+    "raw",
+    "prior_0.25",
+    "prior_1",
+    "prior_4",
+    "posterior_1"
+  ],
+  "unsupervised": "PCA 8 components plus 8 tracking-regime distances fitted only on current training-fold tracking; no target adaptation",
+  "feature_selection": "Use all 84 compatible input measurements; V1 top-60 selection is not inherited. Model family/regularization/context/decoder selected inside inner folds; no global label-based feature ranking.",
+  "target_features": "Raw target tracking is first read for final inference only. No target possession labels or Smart Tagging teacher channels are used.",
+  "offline_context": "Before/after tracking within each half, symmetric 1s/5s summaries and last/next observed ball context. This is offline inference, not a real-time or causal model.",
+  "scenarios": [
+    "clean",
+    "original_dropout",
+    "short_gaps",
+    "long_gaps"
+  ],
+  "scenario_seeds": "6006 + 1009 * match_index + 101 * scenario_index",
+  "training_view_weights": {
+    "clean": 0.4,
+    "original_dropout": 0.2,
+    "short_gaps": 0.2,
+    "long_gaps": 0.2
+  },
+  "sampling_hz": 5,
+  "evaluation_hz": 25,
+  "hmm": "New transition/initial/prior estimates from current training-fold labels at 5 Hz; no frozen V1 HMM. Frame predictions are expanded within each period before official evaluation.",
+  "objective": ".5 * mean clean SpellF1 + .5 * mean of three dropout conditions, equal match weighting",
+  "screening": "Compare nested V6 with the independently refitted causal84 reference; also show frozen v1 only on the three matches excluded from v1 training. Never score frozen v1 on its own training fixtures as an unseen reference.",
+  "no_automatic_submission": true,
+  "smoke_checks": {
+    "exhaustive_decoder_cases": 12,
+    "half_context_isolation": true,
+    "status": "passed"
+  },
+  "source_sha256": {
+    "notebook_2/v6_sequence_context/run_v6.py": "a5ae204fd1a7db1ba629068a598eb4aee96fa37cded7d4b2e9f39c56420569ff",
+    "notebook_2/v6_sequence_context/models_v6.py": "51d6e2f7e8d6db583d052c77d20205dd5f1437377c4ef465583715706fcbf5d6",
+    "local_modules/possession_features.py": "fe0281a72ff88414a4dfbd917677284b512fb4abfecd28661f28c567dd55309f"
+  },
+  "preserved_versions": {
+    "notebook_2/v3_dual_expert/run_v3.py": "0df705f5a31d5b3d24edaf07bfc534193f26d6299c957559aff65190a7f835ff",
+    "notebook_2/v4_ssl_smarttag/v4_models.py": "ee02ca6da87c9741766b99a44a15a0eaabae1258c70475e9c913b5a43d93ff76",
+    "notebook_2/v4_ssl_smarttag/run_v4.py": "43aed2dd4df8ab6214e52652ee64843f8075495f95960367556198a3b539b8cb",
+    "notebook_2/v4_ssl_smarttag/tracking_core.py": "429b4cc304295dbcbfb47421481d7aa062fc43770558dfaa6bbd3115859b69b4"
+  },
+  "outer_choices": [
+    {
+      "outer": 0,
+      "train": [
+        "J03WN1",
+        "J03WOH",
+        "J03WPY",
+        "J03WQQ",
+        "J03WR9"
+      ],
+      "heldout": [
+        "J03WMX",
+        "J03WOY"
+      ],
+      "selection": {
+        "model": "context_deep",
+        "decoder": "prior_4",
+        "objective": 0.5415677522125221,
+        "clean": 0.6227372108866739,
+        "dropout": 0.4603982935383702
+      }
+    },
+    {
+      "outer": 1,
+      "train": [
+        "J03WMX",
+        "J03WOH",
+        "J03WOY",
+        "J03WPY",
+        "J03WR9"
+      ],
+      "heldout": [
+        "J03WN1",
+        "J03WQQ"
+      ],
+      "selection": {
+        "model": "context_deep",
+        "decoder": "prior_4",
+        "objective": 0.5293735903912573,
+        "clean": 0.6026495604881512,
+        "dropout": 0.4560976202943634
+      }
+    },
+    {
+      "outer": 2,
+      "train": [
+        "J03WMX",
+        "J03WN1",
+        "J03WOY",
+        "J03WQQ"
+      ],
+      "heldout": [
+        "J03WOH",
+        "J03WPY",
+        "J03WR9"
+      ],
+      "selection": {
+        "model": "context_deep",
+        "decoder": "prior_4",
+        "objective": 0.5248335540867018,
+        "clean": 0.6086232395157503,
+        "dropout": 0.4410438686576534
+      }
+    }
+  ],
+  "final_choice": {
+    "model": "context_deep",
+    "decoder": "prior_4",
+    "objective": 0.5324314949546931,
+    "clean": 0.6115304867812233,
+    "dropout": 0.4533325031281629
+  },
+  "nested_runtime_seconds": 876.413458108902,
+  "model_sha256": "69db493a71c99b53cfec4032f5b27429be67d1d9ba349af725ec28796bfb5282",
+  "submission": {
+    "file": "Decul_V6.csv",
+    "sha256": "020ebd0cdac4f6bd8228cf1f27193c123b7c73fe872d5655a182300c4556c250",
+    "rows": 199319,
+    "label_counts": {
+      "H": 68462,
+      "A": 47055,
+      "D": 43340,
+      "X": 40462
+    },
+    "target_labels_used": false,
+    "target_accuracy_unknown": true
+  },
+  "verification": {
+    "status": "passed",
+    "validation_rows": 1188,
+    "stage_counts": {
+      "causal_reference": 28,
+      "frozen_v1_reference": 12,
+      "inner": 1120,
+      "nested_v6": 28
+    },
+    "outer_selection_recomputed_from_inner_only": true,
+    "final_selection_recomputed_from_inner_only": true,
+    "final_hmm_recomputed_from_training_labels": true,
+    "source_hashes_match": true,
+    "earlier_submission_unchanged": true,
+    "v3_v4_source_hashes_unchanged": true,
+    "separate_process_prediction_byte_identical": true,
+    "half_decoder_isolation_all_five_decoders": true,
+    "uneven_half_grid_expansion": true,
+    "reproduction_sha256": "020ebd0cdac4f6bd8228cf1f27193c123b7c73fe872d5655a182300c4556c250",
+    "reproduction_rows": 199319,
+    "input_and_dependency_sha256": {
+      "data/derived/idsse/J03WMX/idsse_feature_contract.json": "66d5f2aa6bdea9d946803d7943b1a146ff67b4feff636197225b8976dc55950a",
+      "data/derived/idsse/J03WMX/idsse_training_labels.parquet": "6bf6c80a5d74cc8778821696855a23f714b9ccacfe313f5a5cef60fcbf18e8d6",
+      "data/derived/idsse/J03WMX/idsse_features_84.parquet": "caeda611b9680c270b2bfa25c60c5810b1002a3d07714e86b2031f5849884eea",
+      "data/derived/idsse/J03WMX/idsse_tracking_adapter.npz": "94f6c0e85f5edf739d3955b18f144d15e2a1f94e43119a4ec77a289c0ed400b2",
+      "data/derived/idsse/J03WN1/idsse_feature_contract.json": "a702c80831f519e1d5b2a5b072e2e100ac9df75500914c7528b921da1c9a16b4",
+      "data/derived/idsse/J03WN1/idsse_training_labels.parquet": "04c33226ba14bb72bfb8d2367ff0bc0ce271490b6ec0f59024f802a9593679ca",
+      "data/derived/idsse/J03WN1/idsse_features_84.parquet": "b05cda0c18b8d979791e62cc9a7b44149094b6509bb3376f0b9d16cd7ad95be8",
+      "data/derived/idsse/J03WN1/idsse_tracking_adapter.npz": "980f6d1af53190f630fe952723a668b600c570768b78bb56368e71050a5a064d",
+      "data/derived/idsse/J03WOH/idsse_feature_contract.json": "e63a0b3fe5ef9c9148a5ca688266bf12897e278556aaa49df7ca1ee58a34272c",
+      "data/derived/idsse/J03WOH/idsse_training_labels.parquet": "6f36c3937c6b9b39a5d60c9092c417e9f6d27286a3ef5cce1562680caaeedc7c",
+      "data/derived/idsse/J03WOH/idsse_features_84.parquet": "34f4db2e51a871f3d7786da5142266b79e0659c935790cb91bc40c107c32a8e4",
+      "data/derived/idsse/J03WOH/idsse_tracking_adapter.npz": "ef406ce5d3a2192202788f86ee546a15dfe5a84ad20552bdc5962519acd1c879",
+      "data/derived/idsse/J03WOY/idsse_feature_contract.json": "5441429d121a5abef9010c67b215ba97d909ec4828e57b8f6d376e05cfd25dee",
+      "data/derived/idsse/J03WOY/idsse_training_labels.parquet": "0c608ad400641dfab0c07b80b7f145fd2bf5882c6eee1398195b58c981d56acc",
+      "data/derived/idsse/J03WOY/idsse_features_84.parquet": "f7c0c6110b37c067f85a6fc26afed2f0ccad8608e7ac0a0952877e3e136eaa35",
+      "data/derived/idsse/J03WOY/idsse_tracking_adapter.npz": "7f2827c0d7c00211bea0b3b44cb0698034a5daf7aeffc5d752731fe0fee7b520",
+      "data/derived/idsse/J03WPY/idsse_feature_contract.json": "460baacde0b0f6b51be845c639381b1bf49838e5de29ff34c7854822d87d7238",
+      "data/derived/idsse/J03WPY/idsse_training_labels.parquet": "a83723066d96b0feb7ec622324de58c8bfc4f82d018bba15c5ded3afa33edbf1",
+      "data/derived/idsse/J03WPY/idsse_features_84.parquet": "fe1b8003407456a382989e0a1930901d90650b8f16dede78673e6016d54bc9f7",
+      "data/derived/idsse/J03WPY/idsse_tracking_adapter.npz": "6febacff3a3a4a2b47234e1accb44b3e4952a16bb447a91edc079d6ad7fbe7e4",
+      "data/derived/idsse/J03WQQ/idsse_feature_contract.json": "3a639292d5c82e6e25813732cffbbe88edc9be9976585a83cfd8ec1b224b1dab",
+      "data/derived/idsse/J03WQQ/idsse_training_labels.parquet": "2f03622fb52837b2af190e20f95b25c921d04f8f1e80eb78880d637e45907b4c",
+      "data/derived/idsse/J03WQQ/idsse_features_84.parquet": "acb71f1644fc04d8538139afa4759f413cc55c06b329df007bc836b883320583",
+      "data/derived/idsse/J03WQQ/idsse_tracking_adapter.npz": "e784cee5275ab2f62c433794a9aa309d5f77c8aef0d195b4ceb7066492392c23",
+      "data/derived/idsse/J03WR9/idsse_feature_contract.json": "e47853c6a0b5c82498464ec721b6a160c55f3ae0463cbb781ec8d86ebbc997aa",
+      "data/derived/idsse/J03WR9/idsse_training_labels.parquet": "21827b8ede41327c5b48edfbb15856e64ae7a6e005b7faf34ac15eee7e334840",
+      "data/derived/idsse/J03WR9/idsse_features_84.parquet": "f0a05c2f5bc9d37e210b2a927243b55be10890a6d5e551fe13dcc14a846e9b8c",
+      "data/derived/idsse/J03WR9/idsse_tracking_adapter.npz": "4b8c1833b8675a8556553a0b62ad70947d01556cf24f8a43c7ef23c91c5f4b41",
+      "games.py": "3b2122794e9e0476e2b3a871d14880e5fa47c4feaeacf99caef054c2309076ce",
+      "evaluation/possession_metrics.py": "341bad48904b489d6e875397b27687f5d6a4d22a397f3dc8af3a00d48f16874d",
+      "configs/bar_ath_feature_options.json": "3c8737a23604babde067494d37ed877a12fec8c5c07ac2011bd7a7abb34f18f5",
+      "notebook_2/publication_candidate/configs/feature_metadata_public.json": "8a74147b89d76a1233f4baa054c7f3eadde700016516a7ada42b629850004e29",
+      "data/tactical/BAR-ATH_tactical_atd.xml": "327e35e32e46a647389b88f883d4f9a2ab931e3e6148aef2fcf8f22b1e93c43a",
+      "data/tactical/BAR-ATH_tactical_atd.txt": "f130e350d2bfdf734b7e32f072931fccc6d015c1e837d082064875fe0a700431"
+    },
+    "runtime_versions": {
+      "numpy": "2.4.6",
+      "pandas": "3.1.0",
+      "scikit-learn": "1.9.1",
+      "xgboost": "3.2.0",
+      "numba": "0.68.1",
+      "joblib": "1.6.0"
+    },
+    "initial_preflight_note": "An early preflight found three observation-only features located in the legacy tagging stage. V6 now calculates them explicitly; exact clean84 reconstruction passed before fitting.",
+    "notebook_execution": {
+      "executed_cells": 10,
+      "runtime_errors": 0,
+      "chart_visually_checked": true
+    },
+    "temporary_cache_removed": true
+  },
+  "review_artifact_sha256": {
+    "notebook_2/v6_sequence_context/00_Decul_V6_Sequence_Context.ipynb": "986f5f1561031675b1a37483ac4c37a11183a471f2d91d9cd6902f47dbdac101",
+    "notebook_2/v6_sequence_context/README.md": "e726a2a49add123893f2e17ae07fff9f78c820c91d980211fbce97b800b9d78b",
+    "notebook_2/v6_sequence_context/results/20261108_053619_utc/report.md": "091652b35171645d5980ac1fdf8a1caf8839ebc969cd7aab75107b80e9cda3c4"
+  }
+}

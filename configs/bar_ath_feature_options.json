@@ -1,0 +1,7 @@
+{
+  "features": {
+    "deduplicate_exact": true,
+    "max_player_speed": 12.0,
+    "max_ball_speed": 45.0
+  }
+}
